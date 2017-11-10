@@ -6,11 +6,10 @@ module.exports = {
   },
   "rules": {
       "semi": 2,
-      "no-console": "off",
-      "indent": 2
+      "indent": 2,
+      "no-cond-assign": "off"
   },
   "env": {
-      "browser": true,
       "node": true
   }
 };

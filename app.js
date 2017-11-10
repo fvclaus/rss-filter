@@ -1,66 +1,104 @@
 var express = require('express');
-var request = require('request');
 var Feed = require('feed');
+var Promise = require('promise');
+var winston = require('winston');
+var FeedParser = require('feedparser');
+var loadUrl = require('./loadUrl.js');
 var app = express();
 
-// respond with "hello world" when a GET request is made to the homepage
-app.get('/convert', function (req, res) {
-  var url = req.query.url;
-  console.log('GET ' + url);
-  request
-    .get(url)
-    .on('response', function (urlResponse) {
-      var error;
+var logger = new winston.Logger({
+  transports: [new winston.transports.Console({level: 'info'})]
+});
 
-      const statusCode = urlResponse.statusCode;
-      if (statusCode !== 200) {
-        error = new Error('Request failed with code ' + statusCode + '.');
-      }
+const FEED_URLS = ['https://www.fly4free.com/feed/',
+  'http://www.exbir.de/index.php?format=feed&type=rss',
+  'https://feeds.feedburner.com/secretflying/moo',
+  'https://www.mydealz.de/rss/reisen'];
 
-      const contentType = urlResponse.headers['content-type'];
-      if (!contentType.startsWith('application/json')) {
-        error = new Error('Content type of response is ' + contentType + ', not application/json.');
-      }
+const KEYWORD_STREAMS = [
+  {
+    name: 'München',
+    keywords: ['München', 'Munich', 'MUC', 'Memmingen', 'FMM']
+  },
+  {
+    name: 'San Francisco',
+    keywords: ['San Francisco', 'SFO', 'Oakland', 'OAK', 'San Jose', 'SJC']
+  },
+  {
+    name: 'Nahe München',
+    keywords: ['Salzburg', 'SZG', 'Friedrichshafen', 'FDH', 'Nürnberg', 'Nuremberg', 'NUE']
+  }
+];
 
-      if (error) {
-        console.error(error.message);
-        urlResponse.destroy(error);
-        return;
-      }
+function loadFeedItems (url, regex) {
+  return new Promise(function (resolve, reject) {
+    var feedparser = new FeedParser();
 
-      urlResponse.setEncoding('utf8');
-      var rawData = '';
-      urlResponse.on('data', function (chunk) { rawData += chunk; });
-      urlResponse.on('end', function () {
-        try {
-          var data = JSON.parse(rawData);
-          console.log('Response: ' + data);
-          var feed = new Feed({
-            title: url,
-            updated: new Date()
-          });
-          data.forEach(function (data) {
-        // var dataAsXml = new xml.Builder().buildObject({root: parsedData});
-            feed.addItem({
-              description: JSON.stringify(data),
-              date: new Date()
-            });
-          });
-
-          // console.log('Converted response: ' + parsedDataAsXml);
-          // res.set('Content-Type', 'text/xml');
-          // res.send(parsedDataAsXml.replace(/\r?\n|\r/g, ''));
-          res.send(feed.atom1());
-        } catch (e) {
-          console.error(e.message);
-        }
-      });
-    }).on('error', (e) => {
-      console.error('Got error: ' + e.message);
-      res.status(500).send('Could not GET url ' + url + ': ' + e.message);
+    feedparser.on('error', function (error) {
+      logger.log('error', 'Error parsing feed %s. Reason %s', url, error);
+      // Ignore when a single feed cannot be parsed, otherwise this will take down all other feeds too.
+      resolve([]);
     });
+
+    var items = [];
+
+    feedparser.on('readable', function () {
+      var stream = this;
+      var item;
+
+      // https://www.npmjs.com/package/feedparser#list-of-article-properties
+      while (item = stream.read()) {
+        var text = [item.title, item.description, item.summary].join(' ');
+        if (regex.test(text)) {
+          logger.log('verbose', 'Item matched: %s', item.title);
+          items.push(item);
+        } else {
+          logger.log('verbose', 'Item not matched: %s', item.title);
+        }
+      }
+    });
+
+    feedparser.on('end', function () {
+      logger.log('verbose', 'Resolving with %d items.', items.length);
+      resolve(items);
+    });
+
+    loadUrl(url)
+    .then(res => {
+      res.pipe(feedparser);
+    })
+    .catch(e => resolve([]));
+  });
+}
+
+app.get('/api/filter-static/:index', function (req, res) {
+  var index = req.params.index;
+  var stream = KEYWORD_STREAMS[parseInt(index)];
+  var regex = new RegExp(stream.keywords.join('|'), 'i');
+  logger.log('verbose', 'Created regex %s.', regex);
+  var promise = Promise.all(FEED_URLS.map(feedUrl => loadFeedItems(feedUrl, regex)));
+  // This will never reject.
+  promise
+  .then(promiseResults => {
+    var items = promiseResults.reduce((a, b) => a.concat(b));
+    logger.info('Reveiced filtered items ', items.map(item => item.title));
+    // https://www.npmjs.com/package/feed
+    var feed = new Feed({
+      title: stream.name,
+      // TODO This should be the timestamp of the latest feed.
+      updated: new Date()
+    });
+    items.forEach(function (item) {
+      item.content = item.description || item.summary;
+      feed.addItem(item);
+    });
+    res.header('Content-Type', 'application/rss+xml');
+    res.send(feed.atom1());
+  })
+  // Development errors. Otherwise error is swallowed.
+  .catch(e => logger.error(e));
 });
 
 app.listen(3000, function () {
-  console.log('Example app listening on port 3000!');
+  winston.log('Example app listening on port 3000!');
 });
