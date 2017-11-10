@@ -13,7 +13,7 @@ var logger = new winston.Logger({
 const FEED_URLS = ['https://www.fly4free.com/feed/',
   'http://www.exbir.de/index.php?format=feed&type=rss',
   'https://feeds.feedburner.com/secretflying/moo',
-  'https://www.mydealz.de/rss/reisen'];
+  'https://www.mydealz.de/rss/bfuerbanane'];
 
 const KEYWORD_STREAMS = [
   {
@@ -27,6 +27,10 @@ const KEYWORD_STREAMS = [
   {
     name: 'Nahe München',
     keywords: ['Salzburg', 'SZG', 'Friedrichshafen', 'FDH', 'Nürnberg', 'Nuremberg', 'NUE']
+  },
+  {
+    name: 'Düsseldorf',
+    keywords: ['Düsseldorf', 'DUS', 'Weeze', 'NRN', 'Bonn', 'Köln', 'CGN']
   }
 ];
 
