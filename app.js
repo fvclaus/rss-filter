@@ -99,6 +99,8 @@ app.get('/api/filter-static/:index', function (req, res) {
   .catch(e => logger.error(e));
 });
 
-app.listen(3000, function () {
+var port = parseInt(process.env.PORT) || 3000;
+
+app.listen(port, function () {
   winston.log('Example app listening on port 3000!');
 });
