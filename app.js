@@ -7,7 +7,7 @@ var loadUrl = require('./loadUrl.js');
 var app = express();
 
 var logger = new winston.Logger({
-  transports: [new winston.transports.Console({level: 'info'})]
+  transports: [new winston.transports.Console({level: 'verbose'})]
 });
 
 const FEED_URLS = ['https://www.fly4free.com/feed/',
