@@ -13,7 +13,7 @@ var logger = new winston.Logger({
 const FEED_URLS = ['https://www.fly4free.com/feed/',
   'http://www.exbir.de/index.php?format=feed&type=rss',
   'https://feeds.feedburner.com/secretflying/moo',
-  'https://www.mydealz.de/rss/bfuerbanane'];
+  'https://mydealz-reisen.herokuapp.com/'];
 
 const KEYWORD_STREAMS = [
   {
