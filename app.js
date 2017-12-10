@@ -6,7 +6,7 @@ var FeedParser = require('feedparser');
 var loadUrl = require('./loadUrl.js');
 var mydealzFeed = require('./mydealz.js');
 var app = express();
-const WEB_URL = process.env.WEB_URL || 'rss-demux.herokuapp.com';
+const WEB_URL = process.env.WEB_URL;
 
 var logger = new winston.Logger({
   transports: [new winston.transports.Console({level: 'verbose'})]
@@ -33,6 +33,10 @@ const KEYWORD_STREAMS = [
   {
     name: 'Düsseldorf',
     keywords: ['Düsseldorf', 'DUS', 'Weeze', 'NRN', 'Bonn', 'Köln', 'CGN']
+  },
+  {
+    name: 'Haftpflicht',
+    keywords: ['Haftpflicht']
   }
 ];
 
