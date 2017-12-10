@@ -4,7 +4,9 @@ var Promise = require('promise');
 var winston = require('winston');
 var FeedParser = require('feedparser');
 var loadUrl = require('./loadUrl.js');
+var mydealzFeed = require('./mydealz.js');
 var app = express();
+const WEB_URL = process.env.WEB_URL || 'rss-demux.herokuapp.com';
 
 var logger = new winston.Logger({
   transports: [new winston.transports.Console({level: 'verbose'})]
@@ -13,7 +15,7 @@ var logger = new winston.Logger({
 const FEED_URLS = ['https://www.fly4free.com/feed/',
   'http://www.exbir.de/index.php?format=feed&type=rss',
   'https://feeds.feedburner.com/secretflying/moo',
-  'https://mydealz-reisen.herokuapp.com/'];
+  WEB_URL + '/mydealz'];
 
 const KEYWORD_STREAMS = [
   {
@@ -67,9 +69,9 @@ function loadFeedItems (url, regex) {
       resolve(items);
     });
 
-    loadUrl(url)
+    loadUrl(url, {resultType: 'stream'})
     .then(res => {
-      res.pipe(feedparser);
+      res.body.pipe(feedparser);
     })
     .catch(e => resolve([]));
   });
@@ -102,6 +104,8 @@ app.get('/api/filter-static/:index', function (req, res) {
   // Development errors. Otherwise error is swallowed.
   .catch(e => logger.error(e));
 });
+
+app.get('/mydealz', mydealzFeed);
 
 var port = parseInt(process.env.PORT) || 3000;
 
