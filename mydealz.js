@@ -90,18 +90,22 @@ function filterFeedItems (feed) {
 }
 
 const mydealzFeed = function (req, res) {
+  logger.info('Loading mydealz feed.')
   loadFeedItems(FEED_URL)
   .then(feed => {
     // https://www.npmjs.com/package/feed
     feed.meta.updated = feed.meta.date;
     var filteredFeed = new Feed(feed.meta);
 
+    logger.info('Filtering mydealz items.');
     filterFeedItems(feed)
     .then(items => {
+      logger.info('Building mydealz feed.');
       items.forEach(function (item) {
         item.content = item.description || item.summary;
         filteredFeed.addItem(item);
       });
+      logger.info('Sending mydealz feed.');
       res.header('Content-Type', 'application/rss+xml');
       res.status(200).send(filteredFeed.atom1());
     });

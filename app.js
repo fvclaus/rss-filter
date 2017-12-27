@@ -98,11 +98,13 @@ app.get('/api/filter-static/:index', function (req, res) {
       // TODO This should be the timestamp of the latest feed.
       updated: new Date()
     });
+    logger.info('Building feed.');
     items.forEach(function (item) {
       item.content = item.description || item.summary;
       feed.addItem(item);
     });
     res.header('Content-Type', 'application/rss+xml');
+    logger.info('Sending feed.');
     res.send(feed.atom1());
   })
   // Development errors. Otherwise error is swallowed.
