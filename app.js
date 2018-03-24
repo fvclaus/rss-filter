@@ -24,7 +24,7 @@ const KEYWORD_STREAMS = [
   },
   {
     name: 'San Francisco',
-    keywords: ['San Francisco', 'SFO', 'Oakland', 'OAK', 'San Jose', 'SJC']
+    keywords: ['San Francisco', 'SFO', 'Oakland', 'OAK', 'SJC']
   },
   {
     name: 'Nahe München',
